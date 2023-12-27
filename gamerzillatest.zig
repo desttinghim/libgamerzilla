@@ -4,11 +4,14 @@ const c = @cImport({
 });
 
 const Gamerzilla = struct {
+    var ally: std.mem.Allocator = undefined;
     var g: c.Gamerzilla = undefined;
     var trophy: [5]c.GamerzillaTrophy = undefined;
     var game_id: c_int = undefined;
 
-    pub fn init(ally: std.mem.Allocator) !void {
+    pub fn init(gzilla_allocator: std.mem.Allocator) !void {
+        ally = gzilla_allocator;
+
         c.GamerzillaInitGame(&g);
 
         g.short_name = try ally.dupeZ(u8, "test");
@@ -58,6 +61,12 @@ const Gamerzilla = struct {
 
     pub fn deinit() void {
         c.GamerzillaQuit();
+        for (trophy) |t| {
+            ally.free(std.mem.span(@as([*:0]u8, @ptrCast(t.name))));
+            ally.free(std.mem.span(@as([*:0]u8, @ptrCast(t.desc))));
+            ally.free(std.mem.span(@as([*:0]u8, @ptrCast(t.true_image))));
+            ally.free(std.mem.span(@as([*:0]u8, @ptrCast(t.false_image))));
+        }
     }
 };
 
